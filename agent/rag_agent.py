@@ -90,11 +90,11 @@ Respuesta:"""
         
         prompt = PromptTemplate.from_template(template)
         
-        self.qa_chain = ConversationalRetrievalChain.from_llm(
+       self.qa_chain = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=retriever,
             memory=self.memory,
-            combine_prompt=prompt,
+            combine_docs_chain_kwargs={"prompt": prompt}, # <--- LA FORMA CORRECTA
             return_source_documents=True,
             verbose=False
         )
