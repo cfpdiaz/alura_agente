@@ -34,19 +34,30 @@ class AcademicAgent:
     
     def _initialize(self):
         """Inicializa la cadena QA CARGANDO el índice FAISS previamente generado."""
-        # En lugar de leer todos los Words, leemos el índice ya compilado (evita el Error 504)
-        if os.path.exists(self.config.FAISS_INDEX_PATH):
-            try:
-                self.vector_store = FAISS.load_local(
-                    self.config.FAISS_INDEX_PATH, 
-                    self.embeddings,
-                    allow_dangerous_deserialization=True # Requerido por versiones recientes de Langchain/FAISS
-                )
-                self._setup_qa_chain()
-            except Exception as e:
-                print(f"Error al cargar el índice FAISS pre-compilado: {e}")
-        else:
-            print("❌ El índice FAISS no existe. Asegúrate de ejecutar build_index.py localmente y subir la carpeta 'faiss_index' a GitHub.")
+        import streamlit as st
+        import os
+        
+        # 1. Verificamos si Streamlit ve la carpeta
+        if not os.path.exists(self.config.FAISS_INDEX_PATH):
+            st.error(f"🚨 ERROR DE CARPETA: No encuentro '{self.config.FAISS_INDEX_PATH}'. El servidor solo ve estas carpetas: {os.listdir('.')}")
+            return
+            
+        # 2. Verificamos qué hay dentro de la carpeta
+        archivos = os.listdir(self.config.FAISS_INDEX_PATH)
+        if len(archivos) == 0:
+            st.error(f"🚨 ERROR DE ARCHIVOS: La carpeta existe pero está VACÍA en el servidor.")
+            return
+            
+        # 3. Intentamos cargar e imprimimos el error real si falla
+        try:
+            self.vector_store = FAISS.load_local(
+                self.config.FAISS_INDEX_PATH, 
+                self.embeddings,
+                allow_dangerous_deserialization=True
+            )
+            self._setup_qa_chain()
+        except Exception as e:
+            st.error(f"🚨 ERROR INTERNO DE FAISS: {str(e)}")
     
     def _setup_qa_chain(self):
         """Configura la cadena de preguntas y respuestas."""
